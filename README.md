@@ -1,25 +1,27 @@
 
 # 🏥 Hospital Management System
 
-A **backend-only hospital management system** designed to manage core healthcare operations such as patient records, doctor schedules, billing, and laboratory management.  
-This project demonstrates expertise in **REST API development**, **database design**, and **secure backend practices**.
+A **backend-only hospital management system** built using **Microservice Architecture** to manage critical healthcare operations such as patient records, doctor schedules, billing, and laboratory services.
 
-> Built with **Spring Boot**, **Java 17**, and **MySQL**, following best practices for scalable backend systems.
+This project demonstrates enterprise-level skills in **microservices design**, **REST APIs**, **secure authentication**, and **distributed systems**.  
+Each module is **loosely coupled**, **independently deployable**, and communicates via **REST APIs**, enabling scalability and flexibility.
+
+> Built with **Spring Boot**, **Java 17**, and **MySQL**, following domain-driven design principles.
 
 ---
 
 ## 🚀 Key Features
 
-| Module            | Features |
-|-------------------|----------|
-| **Authentication** | Secure login with JWT, role-based access (Admin, Doctor, Nurse, Lab Tech, Pharmacist) |
-| **Patient Management** | Register patients, store demographics, health history, insurance details |
-| **Doctor Management** | Maintain doctor profiles, specialties, availability |
-| **Appointments** | Schedule, reschedule, cancel appointments |
-| **Pharmacy** | Manage medicine inventory and prescriptions |
-| **Laboratory** | Handle test orders, results, and reports |
-| **Billing** | Generate invoices, track payments |
-| **Reports** | Generate analytics and system reports |
+| Microservice       | Responsibilities |
+|--------------------|------------------|
+| **Auth Service**    | User login, JWT-based authentication, and role management |
+| **Patient Service** | Manage patient registration, health history, insurance |
+| **Doctor Service**  | Doctor profiles, specialties, availability schedules |
+| **Appointment Service** | Scheduling, rescheduling, and cancellations |
+| **Pharmacy Service** | Medicine inventory and prescription management |
+| **Lab Service**     | Test orders, results, and reporting |
+| **Billing Service** | Generate invoices and track payments |
+| **Report Service**  | Analytics and administrative reports |
 
 ---
 
@@ -27,43 +29,58 @@ This project demonstrates expertise in **REST API development**, **database desi
 
 | Layer         | Technology |
 |---------------|------------|
-| **Backend**   | Java 17, Spring Boot, Spring Data JPA |
-| **Database**  | MySQL |
+| **Backend**   | Java 17, Spring Boot, Spring Cloud |
+| **Database**  | MySQL (separate DB for each microservice) |
+| **API Gateway** | Spring Cloud Gateway |
+| **Service Discovery** | Netflix Eureka |
 | **Authentication** | Spring Security, JWT |
 | **Build Tool** | Maven |
-| **Testing**   | JUnit, Postman for API testing |
-| **Deployment**| Docker, AWS (optional) |
+| **Testing**   | JUnit, Postman |
+| **Deployment**| Docker, Kubernetes, AWS |
 
 ---
 
-## 🏗️ Architecture
+## 🏗️ Microservice Architecture
 
-The backend follows **layered architecture** for scalability and clean code separation.
+Each module is a **standalone microservice** with its own database and deployment pipeline.  
+Services communicate through **REST APIs**, and future versions can include **message queues** (Kafka or RabbitMQ).
 
+### Architecture Flow
 ```
-Controller Layer  ->  Service Layer  ->  Repository Layer  ->  Database
+[ Client / Postman ]
+       |
+       v
+[ API Gateway ]
+       |
+---------------------------------------------
+|       |         |         |               |
+v       v         v         v               v
+Auth   Patient   Doctor   Appointment     Billing                              
 ```
 
-### Flow:
-1. **Controller Layer:** Handles API requests and responses.  
-2. **Service Layer:** Business logic and validation.  
-3. **Repository Layer:** Data persistence using JPA.  
-4. **Database Layer:** MySQL with normalized tables.
+### Benefits of This Architecture
+- **Scalability**: Scale services independently based on demand.  
+- **Fault Isolation**: Failure in one service doesn’t crash the entire system.  
+- **Independent Deployments**: Deploy services without affecting others.  
+- **Domain-Driven**: Services aligned with real healthcare modules.  
 
 ---
 
-## 🗃️ Database Schema
+## 🗃️ Database Schema (Per Service)
 
-### Core Tables:
-- **Users** – login credentials and roles.  
-- **Patients** – patient details and health records.  
-- **Doctors** – specialization, schedules.  
-- **Appointments** – booking information.  
-- **Pharmacy** – medicine inventory.  
-- **LabTests** – lab orders and results.  
-- **Billing** – invoices and payments.
+Each microservice manages its own database. This promotes **data isolation** and **service autonomy**.
 
-### Example ERD:
+| Service           | Key Tables |
+|-------------------|------------|
+| **Auth Service**   | Users, Roles |
+| **Patient Service**| Patients, Medical History |
+| **Doctor Service** | Doctors, Specialties, Schedules |
+| **Appointment Service** | Appointments, Visit Notes |
+| **Pharmacy Service** | Medicines, Prescriptions |
+| **Lab Service**    | Lab Orders, Test Results |
+| **Billing Service**| Invoices, Payments |
+
+Example Relationship (Patient & Doctor):
 ```
 Patient <--> Appointment <--> Doctor
 Patient <--> Billing
@@ -75,16 +92,17 @@ Prescription <--> Pharmacy
 
 ## 📡 API Endpoints
 
-| Endpoint                   | Method | Description |
-|----------------------------|--------|-------------|
-| `/api/v1/auth/login`       | POST   | Authenticate and return JWT |
-| `/api/v1/patients`         | GET    | Fetch all patients |
-| `/api/v1/patients/{id}`    | GET    | Fetch patient by ID |
-| `/api/v1/patients`         | POST   | Create a new patient |
-| `/api/v1/appointments`     | POST   | Schedule appointment |
-| `/api/v1/appointments`     | GET    | List all appointments |
-| `/api/v1/billing/invoice`  | GET    | Generate or fetch invoice |
-| `/api/v1/pharmacy/stock`   | PUT    | Update medicine stock |
+| Endpoint                        | Method | Description |
+|--------------------------------|--------|-------------|
+| `/api/v1/auth/login`           | POST   | Authenticate and get JWT token |
+| `/api/v1/patients`             | GET    | Fetch all patients |
+| `/api/v1/patients/{id}`        | GET    | Fetch specific patient by ID |
+| `/api/v1/appointments`         | POST   | Create new appointment |
+| `/api/v1/appointments`         | GET    | List all appointments |
+| `/api/v1/billing/invoice`      | GET    | Retrieve or generate invoices |
+| `/api/v1/pharmacy/stock`       | PUT    | Update medicine stock |
+
+> All APIs are versioned and protected with **JWT authentication**.
 
 ---
 
@@ -96,15 +114,23 @@ git clone https://github.com/YourUsername/HospitalManagementSystem.git
 cd HospitalManagementSystem
 ```
 
-### **2. Configure Database**
-Create a MySQL database:
+### **2. Configure Databases**
+Create separate MySQL databases for each service:
 ```sql
-CREATE DATABASE hospital_management;
+CREATE DATABASE auth_service;
+CREATE DATABASE patient_service;
+CREATE DATABASE doctor_service;
+CREATE DATABASE appointment_service;
+CREATE DATABASE pharmacy_service;
+CREATE DATABASE lab_service;
+CREATE DATABASE billing_service;
 ```
 
-Update `application.properties`:
+Update each service's `application.properties` with the correct DB URL and credentials.
+
+Example (`patient-service`):
 ```
-spring.datasource.url=jdbc:mysql://localhost:3306/hospital_management
+spring.datasource.url=jdbc:mysql://localhost:3306/patient_service
 spring.datasource.username=root
 spring.datasource.password=yourpassword
 spring.jpa.hibernate.ddl-auto=update
@@ -113,12 +139,25 @@ spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQLDialect
 jwt.secret=your_jwt_secret
 ```
 
-### **3. Run the Backend**
+### **3. Run Each Microservice**
+Navigate to each service folder and run:
 ```bash
 ./mvnw spring-boot:run
 ```
 
-Backend will run at: **http://localhost:8080**
+Example:
+```bash
+cd auth-service
+./mvnw spring-boot:run
+
+cd ../patient-service
+./mvnw spring-boot:run
+```
+
+### **4. Run with Docker (Optional)**
+```bash
+docker compose up --build
+```
 
 ---
 
@@ -126,7 +165,7 @@ Backend will run at: **http://localhost:8080**
 
 Use **Postman** or **cURL** to test endpoints.
 
-Example request to login:
+Example login request:
 ```bash
 curl -X POST http://localhost:8080/api/v1/auth/login -H "Content-Type: application/json" -d '{"username":"admin","password":"admin123"}'
 ```
@@ -134,17 +173,21 @@ curl -X POST http://localhost:8080/api/v1/auth/login -H "Content-Type: applicati
 ---
 
 ## 🛡 Security Measures
-- Passwords encrypted using **BCrypt**  
-- **JWT-based authentication** for stateless security  
-- Role-based access control (RBAC)  
-- Centralized exception handling and input validation  
-- Audit logs for sensitive actions  
+
+- **JWT-based authentication** for stateless security.  
+- **Role-based access control (RBAC)**.  
+- **Password hashing** using BCrypt.  
+- Centralized **input validation** and **error handling**.  
+- Audit trails for sensitive operations.  
+- Potential integration with **OAuth2** and **2FA** in future.
 
 ---
 
 ## 🗺 Future Enhancements
-- Implement email notifications for appointments.  
-- Add insurance claim processing module.  
-- Introduce HL7/FHIR API for interoperability.  
-- Build a React or Angular front-end interface.  
-- Deploy to Kubernetes for scalability.
+
+- Event-driven communication using Kafka or RabbitMQ.  
+- API documentation with Swagger/OpenAPI.  
+- Healthcare interoperability via HL7/FHIR.  
+- AI-driven analytics for patient care.  
+- Build a React or Angular front-end.  
+- Kubernetes deployment for production-grade scaling.
